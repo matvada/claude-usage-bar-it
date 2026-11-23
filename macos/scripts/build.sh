@@ -71,10 +71,13 @@ build_app_bundle() {
     app_version="${APP_VERSION:-$($PLIST_BUDDY -c 'Print :CFBundleShortVersionString' "$PROJECT_DIR/Resources/Info.plist")}"
     app_build="${APP_BUILD:-$(version_to_build_number "$app_version")}"
 
+    # Binario universale (arm64 + x86_64): la release può essere compilata anche su runner Intel.
+    local arch_flags=(--arch arm64 --arch x86_64)
     echo "==> Building release binary..."
-    swift build -c release
+    swift build -c release "${arch_flags[@]}"
+    BIN_DIR="$(swift build -c release "${arch_flags[@]}" --show-bin-path)"
 
-    local binary="$BUILD_DIR/release/$APP_NAME"
+    local binary="$BIN_DIR/$APP_NAME"
     if [[ ! -f "$binary" ]]; then
         echo "Error: binary not found at $binary"
         exit 1
@@ -97,9 +100,9 @@ build_app_bundle() {
         "$PLUTIL" -remove SUFeedURL "$APP_BUNDLE/Contents/Info.plist" 2>/dev/null || true
     fi
 
-    local resource_bundle="$BUILD_DIR/release/${APP_NAME}_${APP_NAME}.bundle"
+    local resource_bundle="$BIN_DIR/${APP_NAME}_${APP_NAME}.bundle"
     if [[ ! -d "$resource_bundle" ]]; then
-        resource_bundle="$(find "$BUILD_DIR" -path "*/release/${APP_NAME}_${APP_NAME}.bundle" -type d | head -n 1 || true)"
+        resource_bundle="$(find "$BUILD_DIR" -ipath "*/release/${APP_NAME}_${APP_NAME}.bundle" -type d | head -n 1 || true)"
     fi
 
     if [[ -z "$resource_bundle" || ! -d "$resource_bundle" ]]; then
