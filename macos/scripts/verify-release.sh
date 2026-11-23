@@ -31,9 +31,12 @@ verify_app_bundle() {
     echo "==> Verifying packaged resources..."
     [[ -f "$app_plist" ]] || { echo "Error: missing Info.plist"; exit 1; }
     [[ -d "$resource_bundle" ]] || { echo "Error: missing SwiftPM resource bundle"; exit 1; }
-    [[ -f "$resource_bundle/Info.plist" ]] || { echo "Error: missing resource bundle Info.plist"; exit 1; }
-    [[ -f "$resource_bundle/claude-logo.png" ]] || { echo "Error: missing packaged logo resource"; exit 1; }
-    [[ -f "$resource_bundle/en.lproj/Localizable.strings" ]] || { echo "Error: missing packaged localization resource"; exit 1; }
+    # Le build universali (xcbuild) producono un bundle con Contents/Resources.
+    local res="$resource_bundle"
+    [[ -d "$resource_bundle/Contents/Resources" ]] && res="$resource_bundle/Contents/Resources"
+    [[ -f "$resource_bundle/Info.plist" || -f "$resource_bundle/Contents/Info.plist" ]] || { echo "Error: missing resource bundle Info.plist"; exit 1; }
+    [[ -f "$res/claude-logo.png" ]] || { echo "Error: missing packaged logo resource"; exit 1; }
+    [[ -f "$res/en.lproj/Localizable.strings" ]] || { echo "Error: missing packaged localization resource"; exit 1; }
     [[ -d "$sparkle_framework" ]] || { echo "Error: missing Sparkle.framework"; exit 1; }
 
     echo "==> Verifying app signature..."
