@@ -9,26 +9,26 @@ enum SignInPage {
         let icon = iconDataURI.map { #"<img src="\#($0)" alt="">"# } ?? ""
         return """
         <!doctype html>
-        <html lang="en">
+        <html lang="it">
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="light dark">
-        <title>Claude Usage Bar</title>
+        <title>Consumi Claude</title>
         \(favicon)
         <style>
         :root {
-          --secondary: #6e6e73; color: #1d1d1f; background: #fff;
+          --secondary: #87867f; color: #141413; background: #faf9f5;
           font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
         }
-        @media (prefers-color-scheme: dark) { :root { --secondary: rgb(255 255 255 / .6); color: #f5f5f7; background: #1e1e1e; } }
+        @media (prefers-color-scheme: dark) { :root { --secondary: #b0aea5; color: #faf9f5; background: #262624; } }
         body { margin: 0; }
         header { position: fixed; top: 18px; left: 20px; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
         header img { width: 20px; height: 20px; }
         main { min-height: 100vh; display: grid; place-content: center; padding: 0 24px; text-align: center; }
-        h1 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
+        h1 { margin: 0 0 8px; font-family: ui-serif, Georgia, serif; font-size: 26px; font-weight: 500; }
         p { max-width: 30em; margin: 0 auto; font-size: 14px; color: var(--secondary); }
         </style>
-        <header>\(icon)Claude Usage Bar</header>
+        <header>\(icon)Consumi Claude</header>
         <main>
           <h1>\(escaped(title))</h1>
           <p>\(escaped(message))</p>

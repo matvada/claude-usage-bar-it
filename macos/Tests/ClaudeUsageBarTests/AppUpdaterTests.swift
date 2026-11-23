@@ -26,8 +26,8 @@ final class AppUpdaterTests: XCTestCase {
     }
 
     func testMissingOrBlankDescriptionFallsBack() {
-        XCTAssertEqual(AppUpdater.describe(makeError(.appcastError)), "Update check failed")
-        XCTAssertEqual(AppUpdater.describe(makeError(.appcastError, description: "   ")), "Update check failed")
+        XCTAssertEqual(AppUpdater.describe(makeError(.appcastError)), "Controllo aggiornamenti non riuscito")
+        XCTAssertEqual(AppUpdater.describe(makeError(.appcastError, description: "   ")), "Controllo aggiornamenti non riuscito")
     }
 
     func testRecoverySuggestionIsAppended() {

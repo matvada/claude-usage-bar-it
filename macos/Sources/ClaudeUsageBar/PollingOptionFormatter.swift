@@ -14,7 +14,7 @@ func pollingOptionLabel(
         return interval
     }
 
-    let fallbackFormat = "%@ (not recommended)"
+    let fallbackFormat = "%@ (sconsigliato)"
     let format = resourceBundle.map {
         NSLocalizedString(
             "polling.option.not_recommended",

@@ -1,104 +1,59 @@
-<p align="center">
-  <img src="macos/Resources/icon.png" width="128" alt="Claude Usage Bar icon">
-</p>
+# Consumi Claude
 
-# Claude Usage Bar
+Un'app per la barra dei menu del Mac che mostra a colpo d'occhio quanto hai usato del tuo piano Claude: la sessione di 5 ore, la settimana, il dettaglio per modello e i crediti extra spesi rispetto al tetto mensile.
 
-Have you ever found yourself refreshing the Claude usage page, wondering how close you are to hitting your rate limit? Yeah, I've been there too. So I built this.
+È un fork, tradotto in italiano e ricolorato nello stile di Claude, di [Claude Usage Bar](https://github.com/Blimp-Labs/claude-usage-bar) di Blimp Labs (licenza BSD 2-Clause).
 
-Now it's just a glimpse away — always sitting at the top of your screen.
+## Cosa mostra
 
-<p align="center">
-  <img src="macos/Resources/demo.png" width="400" alt="Claude Usage Bar demo">
-</p>
+- **Nella barra dei menu:** il logo di Claude e due mini barre, `5h` (sessione) e `7g` (settimana). Sono verde oliva sotto il 60%, terracotta fino all'85% e rosso mattone oltre.
+- **Cliccando l'icona:**
+  - percentuale e ora di azzeramento di sessione e settimana
+  - consumo settimanale per modello
+  - crediti extra spesi sul tetto mensile, in euro o in dollari
+  - grafico dello storico (1h, 6h, 1g, 7g, 30g)
+- **Notifiche:** puoi impostare una soglia per la sessione, una per la settimana e una per i crediti extra.
 
-![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
-![License](https://img.shields.io/badge/license-BSD--2--Clause-green)
+## Installazione
 
-## What it does
-
-A small macOS menu bar app that shows how much of your Claude plan's usage limits you've used.
-
-- A menu bar icon with mini bars for your 5-hour and 7-day limits
-- A popover with each limit's usage and reset time, a per-model breakdown when your plan has one, and extra usage in USD
-- A usage history chart from the last hour to the last 30 days; hover it for exact values
-- Notifications when a limit passes a percentage you choose
-- Launch at login, and a choice of how often to refresh (every 5 minutes to every hour)
-- Sign in with your Claude accounts in the browser and switch between them; no API key needed
-- Updates itself
-
-## Install
-
-1. Download `ClaudeUsageBar.dmg` from the [latest release](https://github.com/Blimp-Labs/claude-usage-bar/releases/latest).
-2. Open it and drag **ClaudeUsageBar** into **Applications**.
-3. Open the app from **Applications**. It runs from the disk image too, but can't update itself there.
-
-The app isn't notarized by Apple, so macOS blocks the first launch:
-
-- **macOS 15 and later:** after the warning, open **System Settings → Privacy & Security**, scroll to **Security**, click **Open Anyway**, and confirm with your password. The button appears for about an hour after the blocked launch.
-- **macOS 14:** Control-click the app in Applications, choose **Open**, then **Open** again.
-
-You only do this once. Updates install without the warning.
-
-## Usage
-
-1. Click the menu bar icon, then **Sign in with Claude**.
-2. Approve access in your browser. The app finishes signing in on its own.
-3. The icon now shows your usage and refreshes every 30 minutes by default.
-
-If the browser can't hand the sign-in back to the app, click **Paste a code instead** and paste the code the page shows.
-
-To add another account, click **Add Account…** in **Settings → Account**. The browser signs in with the account it uses on claude.ai, so sign in to the other account there first.
-
-Click the icon any time for the details. **Settings…** in the popover has:
-
-- **General:** launch at login, and how often to refresh
-- **Notifications:** an alert threshold for the 5-hour, 7-day and extra-usage limits, or **Off**
-- **Account:** which account to show usage for, **Add Account…**, and **Sign Out**, which moves to the account you used before it
-- **Updates:** your version, the daily update check, and **Check for Updates…**
-
-## Updates
-
-The app checks for a new version once a day and asks before installing it. Turn the daily check off, or check right away, in **Settings → Updates**.
-
-## Privacy & data
-
-Your data stays on your Mac, in `~/.config/claude-usage-bar/`:
-
-| File | Contents |
-|------|----------|
-| `credentials.json` | Sign-in tokens for each account you add, readable only by you |
-| `history.json` | Usage history for the chart, for each account you sign into, kept for 30 days, readable only by you |
-
-The app only connects to:
-
-- `claude.ai` and `platform.claude.com`, to sign you in
-- `api.anthropic.com`, to read your usage and account email
-- `blimp-labs.github.io`, to check for updates, and GitHub's release downloads, to fetch them
-
-While you sign in, it also listens on `127.0.0.1`, reachable only from your Mac, for the browser to hand back the sign-in.
-
-**Settings → Account → Sign Out** deletes the shown account's saved tokens.
-
-## Uninstall
-
-1. Turn off **Launch at login** in Settings, then click **Quit** in the popover.
-2. Delete **ClaudeUsageBar** from Applications.
-3. To remove your data and settings too:
-
+1. Scarica `ClaudeUsageBar.dmg` dall'ultima [Release](../../releases/latest).
+2. Apri il DMG e trascina l'app in **Applicazioni**.
+3. L'app non è firmata con un certificato Apple Developer, quindi la prima volta macOS la blocca. Per aprirla fai **clic destro › Apri**, oppure esegui nel Terminale:
    ```sh
-   rm -rf ~/.config/claude-usage-bar
-   defaults delete com.local.ClaudeUsageBar
+   xattr -dr com.apple.quarantine /Applications/ClaudeUsageBar.app
    ```
+4. Clicca l'icona nella barra dei menu, poi **Accedi con Claude**, e autorizza l'accesso nel browser.
 
-## Build from source
+## Requisiti
 
-Clone the repo and run `make install` to build the app and copy it to Applications. Builds made this way don't update themselves; see [CONTRIBUTING.md](CONTRIBUTING.md) for requirements and details.
+- macOS 14 (Sonoma) o successivo
+- Un piano Claude a pagamento (Pro, Max, Team o Enterprise con licenza a utente)
 
-## Contributing
+## Come funziona
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, testing, and how to submit changes.
+L'app accede con il tuo account Claude tramite OAuth, lo stesso accesso che usa Claude Code, e legge gli stessi dati della pagina Impostazioni › Utilizzo di claude.ai. Le credenziali restano sul Mac, in `~/.config/claude-usage-bar/`.
 
-## License
+Queste API non sono pubbliche né documentate. Se Anthropic le modifica, l'app potrebbe smettere di funzionare finché non viene aggiornata.
 
-[BSD 2-Clause](LICENSE)
+## Compilare dai sorgenti
+
+Servono Xcode 26 o successivo e macOS 14 o successivo.
+
+```sh
+make app       # crea macos/ClaudeUsageBar.app
+make dmg       # crea il DMG
+make install   # copia l'app in /Applications
+```
+
+## Pubblicare una nuova versione
+
+Pubblichi un tag `v*` e GitHub Actions compila l'app su macOS e allega DMG e ZIP alla Release:
+
+```sh
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+## Licenza
+
+BSD 2-Clause, come il progetto originale. Vedi [LICENSE](LICENSE).
+Non è un prodotto ufficiale di Anthropic.

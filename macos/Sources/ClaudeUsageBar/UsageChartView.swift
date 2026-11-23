@@ -20,7 +20,7 @@ struct UsageChartView: View {
             let points = historyService.downsampledPoints(for: selectedRange)
 
             if points.isEmpty {
-                Text("No history data yet.")
+                Text("Ancora nessuno storico.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)
@@ -36,7 +36,7 @@ struct UsageChartView: View {
             UsageChartInterpolation.interpolateValues(at: $0, in: points)
         }
 
-        let windows = showsFiveHour ? ["5h", "7d"] : ["7d"]
+        let windows = showsFiveHour ? ["5h", "7g"] : ["7g"]
 
         Chart {
             if showsFiveHour {
@@ -55,7 +55,7 @@ struct UsageChartView: View {
                     x: .value("Time", point.timestamp),
                     y: .value("Usage", point.pct7d * 100)
                 )
-                .foregroundStyle(by: .value("Window", "7d"))
+                .foregroundStyle(by: .value("Window", "7g"))
                 .interpolationMethod(.catmullRom)
             }
 
@@ -69,7 +69,7 @@ struct UsageChartView: View {
                         x: .value("Time", iv.date),
                         y: .value("Usage", iv.pct5h * 100)
                     )
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Theme.blue)
                     .symbolSize(24)
                 }
 
@@ -77,7 +77,7 @@ struct UsageChartView: View {
                     x: .value("Time", iv.date),
                     y: .value("Usage", iv.pct7d * 100)
                 )
-                .foregroundStyle(.orange)
+                .foregroundStyle(Theme.orange)
                 .symbolSize(24)
             }
         }
@@ -104,7 +104,7 @@ struct UsageChartView: View {
         // A fixed "5h"/"7d" scale would keep a 5h legend entry with no line.
         .chartForegroundStyleScale(
             domain: windows,
-            range: windows.map { $0 == "5h" ? Color.blue : Color.orange }
+            range: windows.map { $0 == "5h" ? Theme.blue : Theme.orange }
         )
         .chartLegend(.visible)
         .chartPlotStyle { plot in
@@ -133,11 +133,11 @@ struct UsageChartView: View {
                 if showsFiveHour {
                     Label("\(Int(round(pct5h * 100)))%", systemImage: "circle.fill")
                         .font(.system(size: 9, weight: .medium))
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Theme.blue)
                 }
                 Label("\(Int(round(pct7d * 100)))%", systemImage: "circle.fill")
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Theme.orange)
             }
         }
         .padding(.horizontal, 6)

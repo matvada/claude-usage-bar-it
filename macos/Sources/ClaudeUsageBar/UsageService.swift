@@ -163,7 +163,7 @@ class UsageService: ObservableObject {
     }
 
     private static func unreadableAccountsMessage(_ error: Error) -> String {
-        "Could not read saved accounts (\(error.localizedDescription)). Delete ~/.config/claude-usage-bar/credentials.json and sign in again."
+        "Impossibile leggere gli account salvati (\(error.localizedDescription)). Elimina ~/.config/claude-usage-bar/credentials.json e accedi di nuovo."
     }
 
     // MARK: - Polling
@@ -209,7 +209,7 @@ class UsageService: ObservableObject {
         let listener = await startCallbackListener { [weak self] query in
             guard let self else {
                 return (400, await SignInPage.html(
-                    title: "This sign-in has ended", message: "Start again from Claude Usage Bar."
+                    title: "Questo accesso è terminato", message: "Ricomincia da Consumi Claude."
                 ))
             }
             return await self.handleBrowserCallback(query)
@@ -224,7 +224,7 @@ class UsageService: ObservableObject {
         let redirectURI = listener?.redirectURI ?? redirectUri
         guard urlOpener(authorizeURL(verifier: verifier, state: state, redirectURI: redirectURI)) else {
             endOAuthFlow()
-            lastError = "Could not open Claude sign-in page"
+            lastError = "Impossibile aprire la pagina di accesso a Claude"
             return
         }
         isWaitingForBrowser = listener != nil
@@ -235,7 +235,7 @@ class UsageService: ObservableObject {
     func switchToPastedCode() {
         guard let verifier = codeVerifier, let state = oauthState else { return }
         guard urlOpener(authorizeURL(verifier: verifier, state: state, redirectURI: redirectUri)) else {
-            lastError = "Could not open Claude sign-in page"
+            lastError = "Impossibile aprire la pagina di accesso a Claude"
             return
         }
         isWaitingForBrowser = false
@@ -256,26 +256,26 @@ class UsageService: ObservableObject {
         // A whitespace-only paste trims to "" and yields no parts, so guard before
         // indexing. Leave isAwaitingCode set so the user can retry without restarting.
         guard let code = parts.first.map(String.init), !code.isEmpty else {
-            lastError = "No OAuth code entered"
+            lastError = "Nessun codice inserito"
             return
         }
 
         if oauthState != nil {
             guard parts.count > 1 else {
                 endOAuthFlow()
-                lastError = "Missing OAuth state — expected code#state format"
+                lastError = "Codice incompleto: il formato atteso è codice#stato"
                 return
             }
             let returnedState = String(parts[1])
             guard returnedState == oauthState else {
                 endOAuthFlow()
-                lastError = "OAuth state mismatch — try again"
+                lastError = "Il codice non corrisponde: riprova"
                 return
             }
         }
 
         guard let verifier = codeVerifier, let state = oauthState else {
-            lastError = "No pending OAuth flow"
+            lastError = "Nessun accesso in corso"
             isAwaitingCode = false
             return
         }
@@ -291,18 +291,18 @@ class UsageService: ObservableObject {
         guard let state = oauthState, value("state") == state,
               let verifier = codeVerifier, let redirectURI = callbackListener?.redirectURI else {
             return (400, SignInPage.html(
-                title: "This sign-in has expired", message: "Start a new one from Claude Usage Bar."
+                title: "Questo accesso è scaduto", message: "Avvialo di nuovo da Consumi Claude."
             ))
         }
         guard let code = value("code"), !code.isEmpty else {
             guard value("error") != nil else {
                 return (400, SignInPage.html(
-                    title: "Sign-in didn't finish", message: "No authorization code was received."
+                    title: "Accesso non completato", message: "Non è arrivato nessun codice di autorizzazione."
                 ))
             }
             endOAuthFlow()
-            lastError = "Sign-in was canceled in the browser"
-            return (200, SignInPage.html(title: "Sign-in canceled", message: "You can close this tab."))
+            lastError = "Accesso annullato nel browser"
+            return (200, SignInPage.html(title: "Accesso annullato", message: "Puoi chiudere questa scheda."))
         }
 
         // The code only works once, so claim this sign-in before exchanging it.
@@ -310,12 +310,12 @@ class UsageService: ObservableObject {
         guard await exchangeCode(code, state: state, verifier: verifier, redirectURI: redirectURI) else {
             endOAuthFlow()
             return (200, SignInPage.html(
-                title: "Sign-in didn't finish",
-                message: "\(lastError ?? "Unknown error"). Try again from Claude Usage Bar."
+                title: "Accesso non completato",
+                message: "\(lastError ?? "Errore sconosciuto"). Riprova da Consumi Claude."
             ))
         }
         return (200, SignInPage.html(
-            title: "You're signed in", message: "You can close this tab and go back to Claude Usage Bar."
+            title: "Accesso effettuato", message: "Puoi chiudere questa scheda e tornare a Consumi Claude."
         ))
     }
 
@@ -338,25 +338,25 @@ class UsageService: ObservableObject {
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else {
-                lastError = "Invalid token response"
+                lastError = "Risposta del server non valida"
                 return false
             }
             guard http.statusCode == 200 else {
                 let bodyStr = String(data: data, encoding: .utf8) ?? ""
-                lastError = "Token exchange failed: HTTP \(http.statusCode) \(bodyStr)"
+                lastError = "Scambio del token non riuscito: HTTP \(http.statusCode) \(bodyStr)"
                 return false
             }
 
             guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let credentials = credentials(from: json) else {
-                lastError = "Could not parse token response"
+                lastError = "Impossibile leggere la risposta del server"
                 return false
             }
 
             do {
                 try updateAccounts { $0.insert(StoredAccount(credentials: credentials), at: 0) }
             } catch {
-                lastError = "Failed to save credentials: \(error.localizedDescription)"
+                lastError = "Impossibile salvare le credenziali: \(error.localizedDescription)"
                 return false
             }
             endOAuthFlow()
@@ -365,7 +365,7 @@ class UsageService: ObservableObject {
             startPolling()
             return true
         } catch {
-            lastError = "Token exchange error: \(error.localizedDescription)"
+            lastError = "Errore nello scambio del token: \(error.localizedDescription)"
             return false
         }
     }
@@ -395,7 +395,7 @@ class UsageService: ObservableObject {
                 accounts.insert(accounts.remove(at: index), at: 0)
             }
         } catch {
-            lastError = "Could not switch accounts: \(error.localizedDescription)"
+            lastError = "Impossibile cambiare account: \(error.localizedDescription)"
             return
         }
         startPolling()
@@ -413,7 +413,7 @@ class UsageService: ObservableObject {
         do {
             try updateAccounts { $0.removeAll { $0.id == id } }
         } catch {
-            lastError = "Could not sign out: \(error.localizedDescription)"
+            lastError = "Impossibile uscire dall'account: \(error.localizedDescription)"
             return
         }
         if wasShown { startPolling() }
@@ -474,7 +474,7 @@ class UsageService: ObservableObject {
 
     func fetchUsage() async {
         guard let id = accounts.first?.id else {
-            lastError = "Not signed in"
+            lastError = "Accesso non effettuato"
             return
         }
 
@@ -496,7 +496,7 @@ class UsageService: ObservableObject {
                 // expireSession() normally reports this; skipping it must not
                 // leave stale numbers on screen with no indication why.
                 if isLocalMock, lastError == nil {
-                    lastError = "Local endpoint rejected the request — credentials left intact"
+                    lastError = "L'endpoint locale ha rifiutato la richiesta: credenziali invariate"
                 }
                 return
             }
@@ -508,7 +508,7 @@ class UsageService: ObservableObject {
                     retryAfter: retryAfter,
                     currentInterval: currentInterval
                 )
-                lastError = "Rate limited — backing off to \(Int(currentInterval))s"
+                lastError = "Troppe richieste: prossimo tentativo tra \(Int(currentInterval)) s"
                 scheduleTimer()
                 return
             }
@@ -609,7 +609,7 @@ class UsageService: ObservableObject {
                         expireSession(id)
                     }
                 case .transientFailure:
-                    if isShown(id) { lastError = "Token refresh failed — will retry" }
+                    if isShown(id) { lastError = "Rinnovo del token non riuscito: riprovo" }
                 case .success:
                     break
                 }
@@ -659,7 +659,7 @@ class UsageService: ObservableObject {
             return nil
 
         case .transientFailure:
-            if isShown(id) { lastError = "Token refresh failed — will retry" }
+            if isShown(id) { lastError = "Rinnovo del token non riuscito: riprovo" }
             return nil
         }
     }
@@ -812,7 +812,7 @@ class UsageService: ObservableObject {
         let wasShown = isShown(id)
         removeAccount(id)
         if wasShown && !isAuthenticated {
-            lastError = "Session expired — please sign in again"
+            lastError = "Sessione scaduta: accedi di nuovo"
         }
     }
 }

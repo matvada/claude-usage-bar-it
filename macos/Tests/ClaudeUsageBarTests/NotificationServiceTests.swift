@@ -17,7 +17,7 @@ final class NotificationServiceTests: XCTestCase {
             previous5h: 70, previous7d: 50, previousExtra: 10,
             current5h: 85, current7d: 90, currentExtra: 50
         )
-        XCTAssertEqual(alerts, [ThresholdAlert(window: "5-hour", pct: 85)])
+        XCTAssertEqual(alerts, [ThresholdAlert(window: "Sessione (5 ore)", pct: 85)])
     }
 
     func testOnly7dFires() {
@@ -26,7 +26,7 @@ final class NotificationServiceTests: XCTestCase {
             previous5h: 70, previous7d: 70, previousExtra: 10,
             current5h: 85, current7d: 85, currentExtra: 50
         )
-        XCTAssertEqual(alerts, [ThresholdAlert(window: "7-day", pct: 85)])
+        XCTAssertEqual(alerts, [ThresholdAlert(window: "Settimana (7 giorni)", pct: 85)])
     }
 
     func testOnlyExtraFires() {
@@ -35,7 +35,7 @@ final class NotificationServiceTests: XCTestCase {
             previous5h: 70, previous7d: 70, previousExtra: 40,
             current5h: 85, current7d: 85, currentExtra: 60
         )
-        XCTAssertEqual(alerts, [ThresholdAlert(window: "Extra usage", pct: 60)])
+        XCTAssertEqual(alerts, [ThresholdAlert(window: "Crediti extra", pct: 60)])
     }
 
     func testAllThreeFireSimultaneously() {
@@ -45,9 +45,9 @@ final class NotificationServiceTests: XCTestCase {
             current5h: 85, current7d: 90, currentExtra: 60
         )
         XCTAssertEqual(alerts, [
-            ThresholdAlert(window: "5-hour", pct: 85),
-            ThresholdAlert(window: "7-day", pct: 90),
-            ThresholdAlert(window: "Extra usage", pct: 60),
+            ThresholdAlert(window: "Sessione (5 ore)", pct: 85),
+            ThresholdAlert(window: "Settimana (7 giorni)", pct: 90),
+            ThresholdAlert(window: "Crediti extra", pct: 60),
         ])
     }
 
@@ -75,7 +75,7 @@ final class NotificationServiceTests: XCTestCase {
             previous5h: 79, previous7d: 50, previousExtra: 10,
             current5h: 80, current7d: 50, currentExtra: 10
         )
-        XCTAssertEqual(alerts, [ThresholdAlert(window: "5-hour", pct: 80)])
+        XCTAssertEqual(alerts, [ThresholdAlert(window: "Sessione (5 ore)", pct: 80)])
     }
 
     @MainActor
@@ -97,8 +97,8 @@ final class NotificationServiceTests: XCTestCase {
             current5h: 60, current7d: 40, currentExtra: 10
         )
         XCTAssertEqual(alerts, [
-            ThresholdAlert(window: "5-hour", pct: 60),
-            ThresholdAlert(window: "7-day", pct: 40),
+            ThresholdAlert(window: "Sessione (5 ore)", pct: 60),
+            ThresholdAlert(window: "Settimana (7 giorni)", pct: 40),
         ])
     }
 
@@ -118,9 +118,9 @@ final class NotificationServiceTests: XCTestCase {
             current5h: 95, current7d: 55, currentExtra: 75
         )
         XCTAssertEqual(alerts, [
-            ThresholdAlert(window: "5-hour", pct: 95),
-            ThresholdAlert(window: "7-day", pct: 55),
-            ThresholdAlert(window: "Extra usage", pct: 75),
+            ThresholdAlert(window: "Sessione (5 ore)", pct: 95),
+            ThresholdAlert(window: "Settimana (7 giorni)", pct: 55),
+            ThresholdAlert(window: "Crediti extra", pct: 75),
         ])
     }
 

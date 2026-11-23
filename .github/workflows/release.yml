@@ -13,102 +13,23 @@ jobs:
     runs-on: macos-26
     permissions:
       contents: write
-    env:
-      REPOSITORY_NAME: ${{ github.event.repository.name }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Build release app bundle
+      - name: Compila l'app
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          owner="$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
-          export APP_VERSION="$version"
-          export SU_FEED_URL="https://${owner}.github.io/${REPOSITORY_NAME}/appcast.xml"
+          export APP_VERSION="${GITHUB_REF_NAME#v}"
           bash macos/scripts/build.sh
 
-      - name: Package and verify release artifacts
-        env:
-          EXPECT_FEED_URL: '1'
+      - name: Crea ZIP e DMG e verifica
         run: |
           bash macos/scripts/build.sh --skip-build --zip --dmg
           make verify-release
 
-      - name: Generate release notes
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p dist/archives
-
-          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
-            --method POST \
-            -f tag_name="${GITHUB_REF_NAME}" \
-            --jq '.body' > dist/release-notes.md
-
-          python3 - <<'PY'
-          import json
-          import os
-          import urllib.request
-
-          with open("dist/release-notes.md", "r", encoding="utf-8") as fh:
-              markdown = fh.read()
-
-          request = urllib.request.Request(
-              "https://api.github.com/markdown",
-              data=json.dumps({
-                  "text": markdown,
-                  "mode": "gfm",
-                  "context": os.environ["GITHUB_REPOSITORY"],
-              }).encode("utf-8"),
-              headers={
-                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
-                  "Accept": "application/vnd.github+json",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-              method="POST",
-          )
-
-          with urllib.request.urlopen(request) as response:
-              html = response.read().decode("utf-8")
-
-          with open("dist/archives/ClaudeUsageBar.html", "w", encoding="utf-8") as fh:
-              fh.write(html)
-          PY
-
-      - name: Generate Sparkle appcast
-        env:
-          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-        run: |
-          if [[ -z "${SPARKLE_PRIVATE_KEY:-}" ]]; then
-            echo "::error::Missing SPARKLE_PRIVATE_KEY repository secret."
-            exit 1
-          fi
-
-          cp macos/ClaudeUsageBar.zip dist/archives/ClaudeUsageBar.zip
-
-          printf '%s' "$SPARKLE_PRIVATE_KEY" | \
-            macos/.build/artifacts/sparkle/Sparkle/bin/generate_appcast \
-              dist/archives \
-              --ed-key-file - \
-              --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/" \
-              --maximum-deltas 0 \
-              -o dist/appcast.xml
-
-      # The appcast is attached to the release so pages.yml can publish it again whenever the website changes.
-      - name: Create release
+      - name: Pubblica la release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           files: |
             macos/ClaudeUsageBar.zip
             macos/ClaudeUsageBar.dmg
-            dist/appcast.xml
-          body_path: dist/release-notes.md
-
-  pages:
-    needs: release
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/pages.yml
-    with:
-      tag: ${{ github.ref_name }}
+          generate_release_notes: true

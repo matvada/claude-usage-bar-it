@@ -13,27 +13,14 @@ private let iconWidth: CGFloat = logoSize + logoGap + barsWidth
 private let iconHeight: CGFloat = 18
 private let fontSize: CGFloat = 8
 
-private struct CachedLabel {
-    let string: NSAttributedString
-    let size: NSSize
-}
-
-private let cachedLabels: [String: CachedLabel] = {
-    let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .medium)
-    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor.black]
-    var result = [String: CachedLabel]()
-    for label in ["5h", "7d"] {
-        let str = NSAttributedString(string: label, attributes: attrs)
-        result[label] = CachedLabel(string: str, size: str.size())
-    }
-    return result
-}()
-
+// Le etichette usano il colore del testo della barra dei menu (chiaro o scuro),
+// quindi si costruiscono al momento del disegno e non vanno in cache.
 private func drawRow(label: String, barX: CGFloat, barY: CGFloat, labelX: CGFloat, drawBarFill: (CGFloat, CGFloat) -> Void) {
-    if let cached = cachedLabels[label] {
-        let labelY = barY + (barHeight - cached.size.height) / 2
-        cached.string.draw(at: NSPoint(x: labelX + labelWidth - cached.size.width, y: labelY))
-    }
+    let font = NSFont.monospacedSystemFont(ofSize: fontSize, weight: .medium)
+    let str = NSAttributedString(string: label, attributes: [.font: font, .foregroundColor: NSColor.labelColor])
+    let size = str.size()
+    let labelY = barY + (barHeight - size.height) / 2
+    str.draw(at: NSPoint(x: labelX + labelWidth - size.width, y: labelY))
     drawBarFill(barX, barY)
 }
 
@@ -51,12 +38,12 @@ func renderIcon(pct5h: Double?, pct7d: Double) -> NSImage {
                 drawBar(x: x, y: y, width: barWidth, height: barHeight, cornerRadius: cornerRadius, pct: pct5h)
             }
         }
-        drawRow(label: "7d", barX: barX, barY: bottomY, labelX: offset) { x, y in
+        drawRow(label: "7g", barX: barX, barY: bottomY, labelX: offset) { x, y in
             drawBar(x: x, y: y, width: barWidth, height: barHeight, cornerRadius: cornerRadius, pct: pct7d)
         }
         return true
     }
-    image.isTemplate = true
+    image.isTemplate = false
     return image
 }
 
@@ -72,12 +59,12 @@ func renderUnauthenticatedIcon() -> NSImage {
         drawRow(label: "5h", barX: barX, barY: topY, labelX: offset) { x, y in
             drawDashedBar(x: x, y: y, width: barWidth, height: barHeight, cornerRadius: cornerRadius)
         }
-        drawRow(label: "7d", barX: barX, barY: bottomY, labelX: offset) { x, y in
+        drawRow(label: "7g", barX: barX, barY: bottomY, labelX: offset) { x, y in
             drawDashedBar(x: x, y: y, width: barWidth, height: barHeight, cornerRadius: cornerRadius)
         }
         return true
     }
-    image.isTemplate = true
+    image.isTemplate = false
     return image
 }
 
@@ -86,7 +73,7 @@ func renderUnauthenticatedIcon() -> NSImage {
 private func drawBar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, cornerRadius: CGFloat, pct: Double) {
     let bgRect = NSRect(x: x, y: y, width: width, height: height)
     let bgPath = NSBezierPath(roundedRect: bgRect, xRadius: cornerRadius, yRadius: cornerRadius)
-    NSColor.black.withAlphaComponent(0.25).setFill()
+    NSColor.labelColor.withAlphaComponent(0.22).setFill()
     bgPath.fill()
 
     let clampedPct = max(0, min(1, pct))
@@ -94,7 +81,7 @@ private func drawBar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, co
         let fillWidth = width * clampedPct
         let fillRect = NSRect(x: x, y: y, width: fillWidth, height: height)
         let fillPath = NSBezierPath(roundedRect: fillRect, xRadius: cornerRadius, yRadius: cornerRadius)
-        NSColor.black.setFill()
+        Theme.levelNS(clampedPct).setFill()
         fillPath.fill()
     }
 }
@@ -102,7 +89,7 @@ private func drawBar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, co
 private func drawDashedBar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFloat, cornerRadius: CGFloat) {
     let rect = NSRect(x: x, y: y, width: width, height: height)
     let path = NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius)
-    NSColor.black.withAlphaComponent(0.25).setStroke()
+    NSColor.labelColor.withAlphaComponent(0.35).setStroke()
     path.lineWidth = 1
     let dashPattern: [CGFloat] = [2, 2]
     path.setLineDash(dashPattern, count: 2, phase: 0)
@@ -111,15 +98,31 @@ private func drawDashedBar(x: CGFloat, y: CGFloat, width: CGFloat, height: CGFlo
 
 // MARK: - Claude logo (pre-rendered 512px template PNG)
 
-private let claudeLogoImage: NSImage? = {
+let claudeLogoTemplate: NSImage? = {
     if let bundle = claudeUsageBarResourceBundle(),
-       let png = bundle.url(forResource: "claude-logo", withExtension: "png") {
-        return NSImage(contentsOf: png)
+       let png = bundle.url(forResource: "claude-logo", withExtension: "png"),
+       let image = NSImage(contentsOf: png) {
+        image.isTemplate = true
+        return image
     }
     return nil
 }()
 
+/// Il logo in terracotta: si usa la forma del PNG come maschera e la si riempie di arancione.
+private let claudeLogoOrange: NSImage? = {
+    guard let logo = claudeLogoTemplate else { return nil }
+    let size = logo.size
+    let tinted = NSImage(size: size, flipped: false) { rect in
+        logo.draw(in: rect)
+        Theme.orangeNS.set()
+        rect.fill(using: .sourceAtop)
+        return true
+    }
+    tinted.isTemplate = false
+    return tinted
+}()
+
 private func drawClaudeLogo(x: CGFloat, y: CGFloat, size: CGFloat) {
-    guard let logo = claudeLogoImage else { return }
+    guard let logo = claudeLogoOrange else { return }
     logo.draw(in: NSRect(x: x, y: y, width: size, height: size))
 }

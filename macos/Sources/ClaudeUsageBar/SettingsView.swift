@@ -5,13 +5,14 @@ struct SettingsWindowContent: View {
     @ObservedObject var service: UsageService
     @ObservedObject var notificationService: NotificationService
     @ObservedObject var appUpdater: AppUpdater
+    @AppStorage("extraUsageCurrency") private var currency = "EUR"
 
     var body: some View {
         Form {
-            Section("General") {
+            Section("Generali") {
                 LaunchAtLoginToggle()
 
-                Picker("Polling Interval", selection: Binding(
+                Picker("Aggiorna ogni", selection: Binding(
                     get: { service.pollingMinutes },
                     set: { service.updatePollingInterval($0) }
                 )) {
@@ -20,9 +21,14 @@ struct SettingsWindowContent: View {
                             .tag(mins)
                     }
                 }
+
+                Picker("Valuta crediti extra", selection: $currency) {
+                    Text("Euro (€)").tag("EUR")
+                    Text("Dollaro ($)").tag("USD")
+                }
             }
 
-            Section("Notifications") {
+            Section("Notifiche") {
                 if !notificationService.isAvailable {
                     Text(notificationsUnavailableMessage)
                         .font(.caption)
@@ -31,18 +37,18 @@ struct SettingsWindowContent: View {
 
                 if service.hasFiveHourWindow {
                     ThresholdSlider(
-                        label: "5-hour window",
+                        label: "Sessione (5 ore)",
                         value: notificationService.threshold5h,
                         onChange: { notificationService.setThreshold5h($0) }
                     )
                 }
                 ThresholdSlider(
-                    label: "7-day window",
+                    label: "Settimana (7 giorni)",
                     value: notificationService.threshold7d,
                     onChange: { notificationService.setThreshold7d($0) }
                 )
                 ThresholdSlider(
-                    label: "Extra usage",
+                    label: "Crediti extra",
                     value: notificationService.thresholdExtra,
                     onChange: { notificationService.setThresholdExtra($0) }
                 )
@@ -53,19 +59,19 @@ struct SettingsWindowContent: View {
                 AccountSection(service: service)
             }
 
-            Section("Updates") {
-                LabeledContent("Version") {
-                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown")
+            Section("Aggiornamenti") {
+                LabeledContent("Versione") {
+                    Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "sconosciuta")
                         .textSelection(.enabled)
                 }
 
                 if appUpdater.isConfigured {
-                    Toggle("Check daily for updates", isOn: Binding(
+                    Toggle("Cerca aggiornamenti ogni giorno", isOn: Binding(
                         get: { appUpdater.automaticallyChecksForUpdates },
                         set: { appUpdater.setAutomaticallyChecksForUpdates($0) }
                     ))
 
-                    Button("Check for Updates…") {
+                    Button("Cerca aggiornamenti…") {
                         appUpdater.checkForUpdates()
                     }
                     .disabled(!appUpdater.canCheckForUpdates)
@@ -76,13 +82,15 @@ struct SettingsWindowContent: View {
                             .foregroundStyle(.red)
                     }
                 } else {
-                    Text("This build has no update feed, so it cannot check for updates.")
+                    Text("Questa versione non ha un canale di aggiornamento: le nuove versioni si scaricano dalla pagina Release su GitHub.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .formStyle(.grouped)
+        .tint(Theme.accent)
+        .environment(\.locale, Locale(identifier: "it_IT"))
         .frame(width: 400)
         .fixedSize(horizontal: false, vertical: true)
         .onAppear {
@@ -97,7 +105,7 @@ private struct AccountSection: View {
     var body: some View {
         Section("Account") {
             if service.accounts.count > 1 {
-                Picker("Show usage for", selection: Binding(
+                Picker("Mostra consumi di", selection: Binding(
                     get: { service.accounts.first?.id },
                     set: { if let id = $0 { service.switchAccount(to: id) } }
                 )) {
@@ -119,15 +127,15 @@ private struct AccountSection: View {
                 } else {
                     CodeEntryView(service: service)
                 }
-                Text("To add a different account, sign in to it on claude.ai first.")
+                Text("Per aggiungere un altro account, accedi prima con quell'account su claude.ai.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else {
                 HStack {
-                    Button("Add Account…") {
+                    Button("Aggiungi account…") {
                         Task { await service.startOAuthFlow() }
                     }
-                    Button("Sign Out") {
+                    Button("Esci dall'account") {
                         service.signOut()
                     }
                 }
@@ -137,7 +145,7 @@ private struct AccountSection: View {
 
     /// Adds the organization when one login is signed in to several.
     private func label(for account: StoredAccount) -> String {
-        let email = account.email ?? "Unknown account"
+        let email = account.email ?? "Account sconosciuto"
         guard service.accounts.filter({ $0.email == account.email }).count > 1,
               let organization = account.organizationName else {
             return email
@@ -171,7 +179,7 @@ struct LaunchAtLoginToggle: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Toggle("Launch at Login", isOn: Binding(
+            Toggle("Apri all'avvio del Mac", isOn: Binding(
                 get: { model.isEnabled },
                 set: { model.setEnabled($0) }
             ))
@@ -196,7 +204,7 @@ final class LaunchAtLoginModel: ObservableObject {
         isSupported = supportsLaunchAtLoginManagement(appURL: bundleURL)
 
         guard isSupported else {
-            message = "Install the app in Applications to manage launch at login."
+            message = "Sposta l'app in Applicazioni per poterla aprire all'avvio."
             return
         }
 
@@ -216,7 +224,7 @@ final class LaunchAtLoginModel: ObservableObject {
             message = nil
         } catch {
             isEnabled = SMAppService.mainApp.status == .enabled
-            message = "Could not update launch at login."
+            message = "Impossibile modificare l'apertura all'avvio."
         }
     }
 }
@@ -260,7 +268,7 @@ private struct ThresholdSlider: View {
             )
         } label: {
             Text(label)
-            Text(value > 0 ? "\(value)%" : "Off")
+            Text(value > 0 ? "\(value)%" : "Spento")
                 .foregroundStyle(.secondary)
         }
         .alignmentGuide(.firstTextBaseline) { d in

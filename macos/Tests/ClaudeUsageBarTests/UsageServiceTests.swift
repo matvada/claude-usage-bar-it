@@ -159,7 +159,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Rate limited — backing off to 3600s")
+        XCTAssertEqual(service.lastError, "Troppe richieste: prossimo tentativo tra 3600 s")
 
         let saved = try XCTUnwrap(store.load(defaultScopes: UsageService.defaultOAuthScopes))
         XCTAssertEqual(saved.accessToken, "new-access")
@@ -209,7 +209,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertFalse(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Session expired — please sign in again")
+        XCTAssertEqual(service.lastError, "Sessione scaduta: accedi di nuovo")
         XCTAssertNil(store.load(defaultScopes: UsageService.defaultOAuthScopes))
     }
 
@@ -579,7 +579,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Token refresh failed — will retry")
+        XCTAssertEqual(service.lastError, "Rinnovo del token non riuscito: riprovo")
         XCTAssertNotNil(store.load(defaultScopes: UsageService.defaultOAuthScopes))
     }
 
@@ -622,7 +622,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Token refresh failed — will retry")
+        XCTAssertEqual(service.lastError, "Rinnovo del token non riuscito: riprovo")
         XCTAssertNotNil(store.load(defaultScopes: UsageService.defaultOAuthScopes))
     }
 
@@ -665,7 +665,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Token refresh failed — will retry")
+        XCTAssertEqual(service.lastError, "Rinnovo del token non riuscito: riprovo")
         XCTAssertEqual(usageRequestCount, 0, "Should not make API call when token is expired and refresh failed")
     }
 
@@ -708,7 +708,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertFalse(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Session expired — please sign in again")
+        XCTAssertEqual(service.lastError, "Sessione scaduta: accedi di nuovo")
         XCTAssertNil(store.load(defaultScopes: UsageService.defaultOAuthScopes))
     }
 
@@ -804,7 +804,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated, "Poll 2: must NOT sign out on transient failure")
-        XCTAssertEqual(service.lastError, "Token refresh failed — will retry")
+        XCTAssertEqual(service.lastError, "Rinnovo del token non riuscito: riprovo")
         XCTAssertEqual(service.usage?.fiveHour?.utilization, 10, "Poll 2: usage unchanged")
         XCTAssertEqual(usageRequestTokens.count, 1, "Poll 2: no new API call (token expired)")
 
@@ -895,7 +895,7 @@ final class UsageServiceTests: XCTestCase {
         await service.fetchUsage()
 
         XCTAssertTrue(service.isAuthenticated, "Must not sign out on transient refresh failure")
-        XCTAssertEqual(service.lastError, "Token refresh failed — will retry")
+        XCTAssertEqual(service.lastError, "Rinnovo del token non riuscito: riprovo")
         XCTAssertNil(service.usage, "No usage data yet")
 
         // ── Poll 2: next cycle, server is healthy → everything works ──
@@ -928,7 +928,7 @@ final class UsageServiceTests: XCTestCase {
 
         await service.submitOAuthCode("   ")
 
-        XCTAssertEqual(service.lastError, "No OAuth code entered")
+        XCTAssertEqual(service.lastError, "Nessun codice inserito")
         XCTAssertFalse(service.isAuthenticated)
     }
 
@@ -946,7 +946,7 @@ final class UsageServiceTests: XCTestCase {
 
         XCTAssertFalse(service.isAwaitingCode)
         XCTAssertFalse(service.isAuthenticated)
-        XCTAssertEqual(service.lastError, "Missing OAuth state — expected code#state format")
+        XCTAssertEqual(service.lastError, "Codice incompleto: il formato atteso è codice#stato")
     }
 
     func testSubmitOAuthCodeWithMatchingStateSignsIn() async throws {
@@ -992,7 +992,7 @@ final class UsageServiceTests: XCTestCase {
 
         XCTAssertFalse(service.isAuthenticated)
         XCTAssertFalse(service.isAwaitingCode)
-        XCTAssertEqual(service.lastError, "OAuth state mismatch — try again")
+        XCTAssertEqual(service.lastError, "Il codice non corrisponde: riprova")
     }
 
     // MARK: - Browser sign-in through the local listener
@@ -1059,7 +1059,7 @@ final class UsageServiceTests: XCTestCase {
         XCTAssertEqual(response.status, 200)
         XCTAssertTrue(response.page.contains("canceled"))
         XCTAssertFalse(service.isAwaitingCode)
-        XCTAssertEqual(service.lastError, "Sign-in was canceled in the browser")
+        XCTAssertEqual(service.lastError, "Accesso annullato nel browser")
     }
 
     func testPastingACodeInsteadOpensTheManualSignInWithTheSameState() async throws {
@@ -1111,7 +1111,7 @@ final class UsageServiceTests: XCTestCase {
 
         XCTAssertTrue(openedURL?.absoluteString.hasPrefix("https://claude.ai/oauth/authorize") == true)
         XCTAssertFalse(service.isAwaitingCode)
-        XCTAssertEqual(service.lastError, "Could not open Claude sign-in page")
+        XCTAssertEqual(service.lastError, "Impossibile aprire la pagina di accesso a Claude")
     }
 
     private func makeOAuthService(

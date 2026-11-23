@@ -49,8 +49,7 @@ verify_app_bundle() {
         exit 1
     fi
 
-    echo "==> Verifying updater metadata..."
-    plutil -extract SUPublicEDKey raw "$app_plist" >/dev/null
+    # Fork: niente canale Sparkle, gli aggiornamenti si scaricano dalle Release di GitHub.
 
     if [[ "${EXPECT_FEED_URL:-0}" == "1" ]]; then
         plutil -extract SUFeedURL raw "$app_plist" >/dev/null

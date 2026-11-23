@@ -381,12 +381,23 @@ struct ExtraUsage: Codable {
     let utilization: Double?
     let usedCredits: Double?
     let monthlyLimit: Double?
+    /// Valuta dei crediti, se l'API la indica (es. "EUR").
+    let currency: String?
 
     enum CodingKeys: String, CodingKey {
         case isEnabled = "is_enabled"
         case utilization
         case usedCredits = "used_credits"
         case monthlyLimit = "monthly_limit"
+        case currency
+    }
+
+    init(isEnabled: Bool, utilization: Double?, usedCredits: Double?, monthlyLimit: Double?, currency: String? = nil) {
+        self.isEnabled = isEnabled
+        self.utilization = utilization
+        self.usedCredits = usedCredits
+        self.monthlyLimit = monthlyLimit
+        self.currency = currency
     }
 
     /// API returns credits in minor units (cents); convert to dollars.
@@ -398,17 +409,25 @@ struct ExtraUsage: Codable {
         monthlyLimit.map { $0 / 100.0 }
     }
 
-    static let currencyFormatter: NumberFormatter = {
+    /// Valuta usata quando l'API non la specifica (impostabile in Impostazioni).
+    static var fallbackCurrency: String {
+        UserDefaults.standard.string(forKey: "extraUsageCurrency") ?? "EUR"
+    }
+
+    func formatAmount(_ amount: Double) -> String {
+        Self.format(amount, currency: (currency?.isEmpty == false ? currency! : Self.fallbackCurrency).uppercased())
+    }
+
+    static func format(_ amount: Double, currency: String) -> String {
         let f = NumberFormatter()
+        f.locale = Locale(identifier: "it_IT")
         f.numberStyle = .currency
-        f.currencyCode = "USD"
+        f.currencyCode = currency
         f.maximumFractionDigits = 2
         f.minimumFractionDigits = 2
-        return f
-    }()
-
-    static func formatUSD(_ amount: Double) -> String {
-        currencyFormatter.string(from: NSNumber(value: amount))
-            ?? String(format: "$%.2f", amount)
+        return f.string(from: NSNumber(value: amount)) ?? String(format: "%.2f %@", amount, currency)
     }
+
+    /// Compatibilità con il codice originale.
+    static func formatUSD(_ amount: Double) -> String { format(amount, currency: "USD") }
 }

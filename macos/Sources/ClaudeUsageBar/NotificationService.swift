@@ -23,21 +23,21 @@ func crossedThresholds(
     if threshold5h > 0 {
         let t = Double(threshold5h)
         if current5h >= t && previous5h < t {
-            alerts.append(ThresholdAlert(window: "5-hour", pct: Int(round(current5h))))
+            alerts.append(ThresholdAlert(window: "Sessione (5 ore)", pct: Int(round(current5h))))
         }
     }
 
     if threshold7d > 0 {
         let t = Double(threshold7d)
         if current7d >= t && previous7d < t {
-            alerts.append(ThresholdAlert(window: "7-day", pct: Int(round(current7d))))
+            alerts.append(ThresholdAlert(window: "Settimana (7 giorni)", pct: Int(round(current7d))))
         }
     }
 
     if thresholdExtra > 0 {
         let t = Double(thresholdExtra)
         if currentExtra >= t && previousExtra < t {
-            alerts.append(ThresholdAlert(window: "Extra usage", pct: Int(round(currentExtra))))
+            alerts.append(ThresholdAlert(window: "Crediti extra", pct: Int(round(currentExtra))))
         }
     }
 
@@ -142,8 +142,8 @@ class NotificationService: ObservableObject {
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Claude Usage"
-        content.body = "\(window) usage has reached \(pct)%"
+        content.title = "Consumi Claude"
+        content.body = "\(window): hai raggiunto il \(pct)%"
         content.sound = .default
 
         let request = UNNotificationRequest(
@@ -173,7 +173,7 @@ class NotificationService: ObservableObject {
 
 /// Dev-only: packaged builds always declare APPL.
 let notificationsUnavailableMessage =
-    "Notifications require a packaged application build — run `make app` and launch the bundle."
+    "Le notifiche funzionano solo con l'app installata (.app)."
 
 /// `UNUserNotificationCenter.current()` aborts outside a real app (e.g. `swift test`/`swift run`) and
 /// there is no availability API, so require a declared `APPL` type (renamed bundles OK, `.appex` excluded).

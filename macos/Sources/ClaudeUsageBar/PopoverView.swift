@@ -7,16 +7,24 @@ struct PopoverView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Claude Usage")
-                .font(.headline)
+            HStack(spacing: 8) {
+                ClaudeMark()
+                    .frame(width: 18, height: 18)
+                Text("Consumi Claude")
+                    .font(Theme.serif(.title3, weight: .medium))
+            }
+            .padding(.bottom, 2)
             if !service.isAuthenticated {
                 signInView
             } else {
                 usageView
             }
         }
-        .padding()
+        .padding(16)
         .frame(width: 340)
+        .background(Theme.paper)
+        .tint(Theme.accent)
+        .environment(\.locale, Locale(identifier: "it_IT"))
     }
 
     @ViewBuilder
@@ -26,14 +34,14 @@ struct PopoverView: View {
         } else if service.isAwaitingCode {
             CodeEntryView(service: service)
         } else {
-            Text("Sign in to view your usage.")
+            Text("Accedi per vedere i tuoi consumi.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
             Button {
                 Task { await service.startOAuthFlow() }
             } label: {
-                Text("Sign in with Claude")
+                Text("Accedi con Claude")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -56,20 +64,20 @@ struct PopoverView: View {
     private var usageView: some View {
         if service.hasFiveHourWindow {
             UsageBucketRow(
-                label: "5-Hour Window",
+                label: "Sessione (5 ore)",
                 bucket: service.usage?.fiveHour
             )
         }
 
         UsageBucketRow(
-            label: "7-Day Window",
+            label: "Settimana (7 giorni)",
             bucket: service.usage?.sevenDay
         )
 
         let perModel = service.usage?.perModelWeekly ?? []
         if !perModel.isEmpty {
             Divider()
-            Text("Per-Model (7 day)")
+            Text("Per modello (7 giorni)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             perModelRows(perModel)
@@ -92,7 +100,7 @@ struct PopoverView: View {
 
         HStack(spacing: 12) {
             if let updated = service.lastUpdated {
-                Text("Updated \(updated, style: .relative) ago")
+                Text("Aggiornato \(updated, style: .relative) fa")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -102,7 +110,7 @@ struct PopoverView: View {
         HStack(spacing: 12) {
             settingsButton
             Spacer()
-            Button("Refresh") {
+            Button("Aggiorna") {
                 Task { await service.fetchUsage() }
             }
             .buttonStyle(.borderless)
@@ -139,7 +147,7 @@ struct PopoverView: View {
     }
 
     private var settingsButton: some View {
-        Button("Settings…") {
+        Button("Impostazioni…") {
             openSettings()
             focusSettingsWindow()
         }
@@ -148,7 +156,7 @@ struct PopoverView: View {
     }
 
     private var quitButton: some View {
-        Button("Quit") { NSApplication.shared.terminate(nil) }
+        Button("Esci") { NSApplication.shared.terminate(nil) }
             .buttonStyle(.borderless)
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -161,17 +169,17 @@ struct BrowserSignInView: View {
     @ObservedObject var service: UsageService
 
     var body: some View {
-        Text("Approve access in your browser to finish signing in.")
+        Text("Autorizza l'accesso nel browser per completare l'accesso.")
             .font(.subheadline)
             .foregroundStyle(.secondary)
 
         HStack {
-            Button("Cancel") {
+            Button("Annulla") {
                 service.endOAuthFlow()
             }
             .buttonStyle(.borderless)
             Spacer()
-            Button("Paste a code instead") {
+            Button("Incolla un codice") {
                 service.switchToPastedCode()
             }
             .buttonStyle(.borderless)
@@ -184,12 +192,12 @@ struct CodeEntryView: View {
     @State private var code = ""
 
     var body: some View {
-        Text("Paste the code from your browser:")
+        Text("Incolla il codice dal browser:")
             .font(.subheadline)
             .foregroundStyle(.secondary)
 
         HStack(spacing: 4) {
-            TextField("code#state", text: $code)
+            TextField("codice#stato", text: $code)
                 .textFieldStyle(.roundedBorder)
                 .font(.system(.body, design: .monospaced))
                 .onSubmit { submit() }
@@ -204,12 +212,12 @@ struct CodeEntryView: View {
         }
 
         HStack {
-            Button("Cancel") {
+            Button("Annulla") {
                 service.endOAuthFlow()
             }
             .buttonStyle(.borderless)
             Spacer()
-            Button("Submit") { submit() }
+            Button("Conferma") { submit() }
                 .buttonStyle(.borderedProminent)
                 .disabled(code.isEmpty)
         }
@@ -226,7 +234,7 @@ struct ErrorLabel: View {
 
     var body: some View {
         Label(message, systemImage: "exclamationmark.triangle")
-            .foregroundStyle(.red)
+            .foregroundStyle(Theme.red)
             .font(.caption)
     }
 }
@@ -240,15 +248,15 @@ private struct UsageBucketRow: View {
             HStack {
                 Text(label)
                     .font(.subheadline)
+                    .fontWeight(.medium)
                 Spacer()
                 Text(percentageText)
-                    .font(.subheadline)
+                    .font(Theme.serif(.body, weight: .semibold))
                     .monospacedDigit()
             }
-            ProgressView(value: (bucket?.utilization ?? 0) / 100.0, total: 1.0)
-                .tint(colorForPct((bucket?.utilization ?? 0) / 100.0))
+            ClaudeBar(fraction: (bucket?.utilization ?? 0) / 100.0)
             if let resetDate = bucket?.resetsAtDate {
-                Text("Resets \(resetDate, style: .relative)")
+                Text("Si azzera tra \(resetDate, style: .relative)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -266,11 +274,12 @@ private struct ExtraUsageRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Extra Usage")
+            Text("Crediti extra")
                 .font(.subheadline)
+                .fontWeight(.medium)
             if let used = extra.usedCreditsAmount, let limit = extra.monthlyLimitAmount {
                 HStack {
-                    Text("\(ExtraUsage.formatUSD(used)) / \(ExtraUsage.formatUSD(limit))")
+                    Text("\(extra.formatAmount(used)) / \(extra.formatAmount(limit))")
                         .font(.caption)
                         .monospacedDigit()
                     Spacer()
@@ -280,17 +289,22 @@ private struct ExtraUsageRow: View {
                             .monospacedDigit()
                     }
                 }
-                ProgressView(value: (extra.utilization ?? 0) / 100.0, total: 1.0)
-                    .tint(.blue)
+                ClaudeBar(fraction: (extra.utilization ?? 0) / 100.0, color: Theme.orange)
             }
         }
     }
 }
 
-private func colorForPct(_ pct: Double) -> Color {
-    switch pct {
-    case ..<0.60: return .green
-    case 0.60..<0.80: return .yellow
-    default: return .red
+/// Il logo di Claude in terracotta.
+struct ClaudeMark: View {
+    var body: some View {
+        if let image = claudeLogoTemplate {
+            Image(nsImage: image)
+                .renderingMode(.template)
+                .resizable()
+                .foregroundStyle(Theme.orange)
+        } else {
+            Image(systemName: "sparkle").foregroundStyle(Theme.orange)
+        }
     }
 }

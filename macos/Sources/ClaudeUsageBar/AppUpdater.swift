@@ -112,7 +112,7 @@ final class AppUpdater: ObservableObject {
         guard let message = (nsError.userInfo[NSLocalizedDescriptionKey] as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines),
             !message.isEmpty else {
-            return "Update check failed"
+            return "Controllo aggiornamenti non riuscito"
         }
 
         // Disk-image/translocation errors put the fix in the recovery suggestion.

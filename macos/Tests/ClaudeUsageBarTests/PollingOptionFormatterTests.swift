@@ -21,8 +21,8 @@ final class PollingOptionFormatterTests: XCTestCase {
     func testDiscouragedPollingOptionsUseLocalizedWarningSuffix() {
         let locale = Locale(identifier: "en_US_POSIX")
 
-        XCTAssertEqual(pollingOptionLabel(for: 5, locale: locale), "5m (not recommended)")
-        XCTAssertEqual(pollingOptionLabel(for: 15, locale: locale), "15m (not recommended)")
+        XCTAssertEqual(pollingOptionLabel(for: 5, locale: locale), "5m (sconsigliato)")
+        XCTAssertEqual(pollingOptionLabel(for: 15, locale: locale), "15m (sconsigliato)")
     }
 
     func testSupportedPollingOptionsAllProduceNonEmptyLabels() {
@@ -46,7 +46,7 @@ final class PollingOptionFormatterTests: XCTestCase {
 
         XCTAssertEqual(
             pollingOptionLabel(for: 5, locale: locale, resourceBundle: nil),
-            "5m (not recommended)"
+            "5m (sconsigliato)"
         )
     }
 }
