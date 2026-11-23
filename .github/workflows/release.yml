@@ -12,11 +12,19 @@ concurrency:
 
 jobs:
   release:
-    runs-on: macos-26
+    runs-on: macos-latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Usa l'Xcode più recente
+        run: |
+          xcode="$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)"
+          sudo xcode-select -s "$xcode"
+          sdk="$(xcrun --sdk macosx --show-sdk-version)"
+          echo "Xcode: $xcode, SDK: $sdk"
+          echo "MIN_SDK_MAJOR=${sdk%%.*}" >> "$GITHUB_ENV"
 
       - name: Leggi la versione
         id: version
