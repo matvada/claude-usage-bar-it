@@ -47,11 +47,7 @@ make install   # copia l'app in /Applications
 
 ## Pubblicare una nuova versione
 
-Pubblichi un tag `v*` e GitHub Actions compila l'app su macOS e allega DMG e ZIP alla Release:
-
-```sh
-git tag v1.0.0 && git push origin v1.0.0
-```
+Aggiorna `CFBundleShortVersionString` in `macos/Resources/Info.plist` e fai push su `main`: GitHub Actions compila l'app e pubblica DMG e ZIP nella Release `v<versione>`.
 
 ## Licenza
 

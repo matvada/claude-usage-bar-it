@@ -1,11 +1,13 @@
 name: Release
 
+# Ogni push su main pubblica la Release v<CFBundleShortVersionString> di Info.plist.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release
   cancel-in-progress: true
 
 jobs:
@@ -16,10 +18,12 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      - name: Leggi la versione
+        id: version
+        run: echo "value=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Resources/Info.plist)" >> "$GITHUB_OUTPUT"
+
       - name: Compila l'app
-        run: |
-          export APP_VERSION="${GITHUB_REF_NAME#v}"
-          bash macos/scripts/build.sh
+        run: bash macos/scripts/build.sh
 
       - name: Crea ZIP e DMG e verifica
         run: |
@@ -32,4 +36,7 @@ jobs:
           files: |
             macos/ClaudeUsageBar.zip
             macos/ClaudeUsageBar.dmg
+          tag_name: v${{ steps.version.outputs.value }}
+          name: Consumi Claude ${{ steps.version.outputs.value }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
